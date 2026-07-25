@@ -72,4 +72,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(InventoryHistory::class, 'changed_by');
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->roles()->where('role', 'admin')->exists();
+    }
 }

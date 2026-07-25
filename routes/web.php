@@ -1,7 +1,171 @@
 <?php
 
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\HeroController as AdminHeroController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShopController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+/* Admin */
+
+Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::resource('products', AdminProductController::class);
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('/inventory/{product}/stock', [InventoryController::class, 'updateStock'])->name('inventory.update-stock');
+    Route::get('/hero', [AdminHeroController::class, 'edit'])->name('hero.edit');
+    Route::post('/hero', [AdminHeroController::class, 'update'])->name('hero.update');
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Shop
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
+
+/*
+|--------------------------------------------------------------------------
+| Cart
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/{product}/add', [CartController::class, 'add'])->name('cart.add');
+Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{product}', [CartController::class, 'remove'])->name('cart.remove');
+
+/*
+|--------------------------------------------------------------------------
+| Checkout
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Orders
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->name('orders.')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('show');
+    Route::get('/orders/{order}/confirmation', [CheckoutController::class, 'confirmation'])->name('confirmation');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Wishlist
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+});
+Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+/*
+|--------------------------------------------------------------------------
+| Reviews
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::post('/reviews/{product}', [App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Recently Viewed
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/recently-viewed', [App\Http\Controllers\ShopController::class, 'recentlyViewed'])->name('shop.recently-viewed');
+
+/*
+|--------------------------------------------------------------------------
+| About, Contact, Help, Privacy, Terms
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/about', [AboutController::class, 'index'])->name('about.index');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/help', function () { return view('help.index'); })->name('help.index');
+Route::get('/privacy', function () { return view('privacy.index'); })->name('privacy.index');
+Route::get('/terms', function () { return view('terms.index'); })->name('terms.index');
+
+/*
+|--------------------------------------------------------------------------
+| Newsletter
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+
+/*
+|--------------------------------------------------------------------------
+| Google Authentication
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback'])->name('google.callback');
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/dashboard', function () {
+    return redirect()->route('home');
+})->name('dashboard');
+
+Route::get('/sitemap.xml', function () {
+    $products = App\Models\Product::with('category')->get();
+    $categories = App\Models\Category::all();
+    return response()->view('sitemap', compact('products', 'categories'))->header('Content-Type', 'application/xml');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Profile
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/details', [ProfileController::class, 'updateDetails'])->name('profile.update-details');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';

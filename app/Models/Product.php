@@ -52,4 +52,9 @@ class Product extends Model
     {
         return $this->hasMany(InventoryHistory::class);
     }
+
+    public function wishlistedBy(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
 }
