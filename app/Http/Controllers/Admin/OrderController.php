@@ -16,6 +16,10 @@ class OrderController extends Controller
             $query->where('status', $request->string('status'));
         }
 
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->string('payment_status'));
+        }
+
         if ($request->filled('search')) {
             $s = $request->string('search');
             $query->where(function ($q) use ($s) {

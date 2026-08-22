@@ -4,25 +4,46 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductDescription;
+use App\Models\ProductImage;
 use App\Models\ProductSizeStock;
 use App\Models\ProductStock;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class RealisticProductsSeeder extends Seeder
 {
     public function run(): void
     {
-        $cats = Category::all()->keyBy('id');
-
         // Disable FKs and re-seed
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        Schema::disableForeignKeyConstraints();
+        ProductImage::truncate();
+        ProductDescription::truncate();
         ProductSizeStock::truncate();
         ProductStock::truncate();
         Product::query()->delete();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        Schema::enableForeignKeyConstraints();
 
-        // Ensure Sneakers category exists
-        Category::firstOrCreate(['slug' => 'sneakers'], ['name' => 'Sneakers']);
+        $categorySlugs = ['sneakers', 'men', 'women', 'kids', 'sports'];
+        $categoryNames = ['Sneakers', 'Men', 'Women', 'Kids', 'Sports'];
+
+        $categories = [];
+        foreach ($categorySlugs as $i => $slug) {
+            $categories[$slug] = Category::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $categoryNames[$i]]
+            );
+        }
+
+        $cats = Category::all()->keyBy('id');
+
+        $catIdMap = [
+            1 => $categories['sneakers']->id,
+            3 => $categories['men']->id,
+            4 => $categories['women']->id,
+            5 => $categories['kids']->id,
+            6 => $categories['sports']->id,
+        ];
 
         $sizeRanges = [
             1 => ['36','37','38','39','40','41','42','43','44','45'],
@@ -273,11 +294,25 @@ class RealisticProductsSeeder extends Seeder
 
         $imgCounter = 1;
 
+        $galleryPool = [];
+        for ($i = 1; $i <= 344; $i++) {
+            $galleryPool[] = "images/products/shoe-{$i}.jpg";
+        }
+
+        $descriptions = [
+            'Everyday comfort meets timeless style. Built with durable materials and a cushioned insole for all-day wear.',
+            'Premium craftsmanship and modern design come together in this versatile pair, perfect for any occasion.',
+            'Engineered for performance without compromising on looks. Lightweight, breathable, and built to last.',
+            'A wardrobe staple crafted from quality materials. Pair it with anything for an effortlessly polished look.',
+            'Designed with your comfort in mind — flexible sole, padded collar, and breathable lining for long-lasting wear.',
+        ];
+
         foreach ($products as $data) {
             $imgNum = $imgCounter++;
 
             $catId = $data[5];
-            $cat = $cats->get($catId);
+            $realCatId = $catIdMap[$catId] ?? $catId;
+            $cat = $cats->get($realCatId);
             if (!$cat) continue;
 
             $product = Product::create([
@@ -286,7 +321,7 @@ class RealisticProductsSeeder extends Seeder
                 'price' => $data[1],
                 'original_price' => $data[2],
                 'image' => "images/products/shoe-{$imgNum}.jpg",
-                'category_id' => $catId,
+                'category_id' => $realCatId,
                 'is_new' => $data[4],
                 'discount' => $data[3],
             ]);
@@ -304,6 +339,23 @@ class RealisticProductsSeeder extends Seeder
                     'quantity' => rand(2, 15),
                 ]);
             }
+
+            $offset = (($product->id - 1) * 5) % count($galleryPool);
+            $gallery = array_slice($galleryPool, $offset, 5);
+            foreach ($gallery as $i => $imageUrl) {
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_url' => $imageUrl,
+                    'sort_order' => $i + 1,
+                ]);
+            }
+
+            ProductDescription::create([
+                'product_id' => $product->id,
+                'description' => $descriptions[$product->id % count($descriptions)]
+                    . ' ' . $product->name . ' by ' . $product->brand
+                    . ' — a ' . $cat->name . ' essential at an unbeatable price.',
+            ]);
         }
 
         $this->command->info('Seeded ' . count($products) . ' realistic products with unique images & sizes.');

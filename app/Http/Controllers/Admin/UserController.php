@@ -10,7 +10,9 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::withCount('orders');
+        $query = User::with(['profile', 'roles'])
+            ->whereDoesntHave('roles', fn ($role) => $role->where('role', 'admin'))
+            ->withCount('orders');
 
         if ($request->filled('search')) {
             $s = $request->string('search');

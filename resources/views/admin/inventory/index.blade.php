@@ -1,163 +1,87 @@
 @extends('admin.layouts.admin')
 
-@section('title', 'Inventory — ' . config('app.name', 'Shoe Haven'))
-@section('page-title', 'Inventory Management')
+@section('title', 'Inventory — Admin')
+@section('page-title', 'Inventory')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <p class="text-muted mb-0">{{ $products->count() }} products total</p>
-    <a href="{{ route('admin.products.create') }}" class="btn btn-sh-orange">
-        <i class="bi bi-plus-lg"></i> Add Product
-    </a>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div><h2 class="h5 fw-bold mb-1">Inventory Control</h2><p class="text-muted small mb-0">Monitor stock levels and keep your catalog available.</p></div>
+    <a href="{{ route('admin.products.create') }}" class="btn btn-sh-orange"><i class="bi bi-plus-lg me-1"></i>Add Product</a>
 </div>
 
-@if ($outOfStock->isNotEmpty())
-    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
-        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-        <div>
-            <strong>{{ $outOfStock->count() }} product(s) out of stock.</strong>
-            @foreach ($outOfStock as $p)
-                <span class="badge bg-danger me-1">{{ $p->name }}</span>
-            @endforeach
-        </div>
-    </div>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card admin-card p-3"><small class="text-muted">Total products</small><div class="fs-4 fw-bold">{{ $products->count() }}</div></div></div>
+    <div class="col-md-4"><div class="card admin-card p-3"><small class="text-muted">Low stock (≤ {{ $lowStockThreshold }})</small><div class="fs-4 fw-bold text-warning">{{ $lowStock->count() }}</div></div></div>
+    <div class="col-md-4"><div class="card admin-card p-3"><small class="text-muted">Out of stock</small><div class="fs-4 fw-bold text-danger">{{ $outOfStock->count() }}</div></div></div>
+</div>
+
+@if($outOfStock->isNotEmpty())
+<div class="alert alert-danger border-0 shadow-sm"><strong><i class="bi bi-x-circle me-2"></i>Out of stock:</strong> {{ $outOfStock->pluck('name')->join(', ') }}</div>
 @endif
 
-@if ($lowStock->isNotEmpty())
-    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
-        <i class="bi bi-bell-fill fs-5"></i>
-        <div>
-            <strong>{{ $lowStock->count() }} product(s) low on stock ({{ $lowStockThreshold }} or fewer).</strong>
-            @foreach ($lowStock as $p)
-                <span class="badge bg-warning text-dark me-1">{{ $p->name }} ({{ $p->stock?->quantity ?? 0 }} left)</span>
-            @endforeach
-        </div>
-    </div>
+@if(isset($filter) && in_array($filter, ['low-stock', 'out-of-stock'], true))
+<div class="alert alert-info border-0 shadow-sm d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-funnel me-2"></i>Showing <strong>{{ $filter === 'low-stock' ? 'low stock' : 'out of stock' }}</strong> products ({{ $products->count() }}).</span>
+    <a href="{{ route('admin.inventory.index') }}" class="btn btn-sm btn-outline-secondary">Clear filter</a>
+</div>
 @endif
 
-<ul class="nav nav-tabs mb-4" id="inventoryTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active fw-medium" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button">
-            <i class="bi bi-box-seam me-2"></i>Stock Levels
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link fw-medium" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
-            <i class="bi bi-clock-history me-2"></i>History
-        </button>
-    </li>
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#stockTab"><i class="bi bi-box-seam me-1"></i>Stock Levels</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#historyTab"><i class="bi bi-clock-history me-1"></i>Adjustment History</button></li>
 </ul>
 
 <div class="tab-content">
-    <div class="tab-pane fade show active" id="stock">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Product</th>
-                                <th>Brand</th>
-                                <th>Category</th>
-                                <th class="text-end">Stock</th>
-                                <th class="text-end">Status</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($products as $product)
-                                @php $qty = $product->stock?->quantity ?? 0; @endphp
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img src="{{ Str::startsWith($product->image, 'http') ? $product->image : asset($product->image) }}"
-                                                 alt="" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px;">
-                                            <span class="fw-medium">{{ $product->name }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ $product->brand }}</td>
-                                    <td>{{ $product->category->name ?? '-' }}</td>
-                                    <td class="text-end fw-medium">{{ $qty }} units</td>
-                                    <td class="text-end">
-                                        @if ($qty === 0)
-                                            <span class="badge bg-danger">Out of Stock</span>
-                                        @elseif ($qty <= $lowStockThreshold)
-                                            <span class="badge bg-warning text-dark">Low Stock</span>
-                                        @else
-                                            <span class="badge bg-success">In Stock</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="d-flex align-items-center gap-2 justify-content-end flex-wrap">
-                                            <form action="{{ route('admin.inventory.update-stock', $product) }}" method="POST"
-                                                  class="d-inline-flex align-items-center gap-2">
-                                                @csrf
-                                                <input type="number" name="quantity" value="{{ $qty }}" min="0"
-                                                       class="form-control form-control-sm" style="width: 70px;" required>
-                                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
-                                            </form>
-                                            <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-secondary" title="Edit product">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete {{ $product->name }}?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger" title="Delete product"><i class="bi bi-trash"></i></button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="tab-pane fade show active" id="stockTab">
+<div class="card admin-card">
+<div class="table-responsive">
+<table class="table admin-table table-hover align-middle mb-0">
+<thead><tr><th>Product</th><th>Category</th><th>Current stock</th><th>Status</th><th class="text-end">Adjust quantity</th></tr></thead>
+<tbody>
+@forelse($products as $product)
+@php $qty=$product->stock?->quantity ?? 0; @endphp
+<tr>
+<td><div class="d-flex align-items-center gap-3"><img class="admin-thumb" src="{{ Str::startsWith($product->image,'http') ? $product->image : asset($product->image) }}" alt=""><div><div class="fw-semibold">{{ $product->name }}</div><small class="text-muted">{{ $product->brand }}</small></div></div></td>
+<td>{{ $product->category->name ?? '—' }}</td>
+<td class="fw-bold">{{ $qty }}</td>
+<td><span class="badge bg-{{ $qty===0?'danger':($qty<=$lowStockThreshold?'warning text-dark':'success') }}">{{ $qty===0?'Out of stock':($qty<=$lowStockThreshold?'Low stock':'In stock') }}</span></td>
+<td class="text-end">
+<form action="{{ route('admin.inventory.update-stock',$product) }}" method="POST" class="d-inline-flex gap-2">
+@csrf
+<input type="number" name="quantity" value="{{ $qty }}" min="0" class="form-control form-control-sm" style="width:90px" required>
+<button class="btn btn-sm btn-outline-dark">Save</button>
+<a href="{{ route('admin.products.edit',$product) }}" class="btn btn-sm btn-outline-secondary" title="Edit product"><i class="bi bi-pencil"></i></a>
+</form>
+</td>
+</tr>
+@empty
+<tr><td colspan="5" class="text-center text-muted py-5">No products found.</td></tr>
+@endforelse
+</tbody>
+</table>
+</div>
+</div>
+</div>
 
-    <div class="tab-pane fade" id="history">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-                @if ($history->isEmpty())
-                    <div class="text-center text-muted py-5">No inventory changes recorded yet.</div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Product</th>
-                                    <th>Change</th>
-                                    <th>Previous</th>
-                                    <th>New</th>
-                                    <th>Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($history as $entry)
-                                    <tr>
-                                        <td class="text-muted small">{{ $entry->created_at->format('M d, Y h:i A') }}</td>
-                                        <td class="fw-medium">{{ $entry->product->name ?? 'Deleted' }}</td>
-                                        <td>
-                                            @if ($entry->change_amount > 0)
-                                                <span class="text-success"><i class="bi bi-arrow-up me-1"></i>+{{ $entry->change_amount }}</span>
-                                            @elseif ($entry->change_amount < 0)
-                                                <span class="text-danger"><i class="bi bi-arrow-down me-1"></i>{{ $entry->change_amount }}</span>
-                                            @else
-                                                <span class="text-muted">0</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $entry->previous_quantity }}</td>
-                                        <td>{{ $entry->new_quantity }}</td>
-                                        <td><span class="badge bg-secondary">{{ str_replace('_', ' ', $entry->change_type) }}</span></td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
+<div class="tab-pane fade" id="historyTab">
+<div class="card admin-card">
+<div class="table-responsive">
+<table class="table admin-table table-hover align-middle mb-0">
+<thead><tr><th>Product</th><th>Previous</th><th>New</th><th>Change</th><th>Type</th><th>Date</th></tr></thead>
+<tbody>
+@forelse($history as $entry)
+<tr>
+<td class="fw-semibold">{{ $entry->product?->name ?? 'Deleted product' }}</td>
+<td>{{ $entry->previous_quantity }}</td><td>{{ $entry->new_quantity }}</td>
+<td class="fw-bold {{ $entry->change_amount > 0 ? 'text-success' : ($entry->change_amount < 0 ? 'text-danger' : 'text-muted') }}">{{ $entry->change_amount > 0 ? '+' : '' }}{{ $entry->change_amount }}</td>
+<td><span class="badge bg-light text-dark text-capitalize">{{ $entry->change_type }}</span></td>
+<td><small class="text-muted">{{ $entry->created_at->format('M d, Y H:i') }}</small></td>
+</tr>
+@empty<tr><td colspan="6" class="text-center text-muted py-5">No stock adjustments recorded.</td></tr>@endforelse
+</tbody>
+</table>
+</div>
+</div>
+</div>
 </div>
 @endsection

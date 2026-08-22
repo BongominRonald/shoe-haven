@@ -25,7 +25,7 @@ class ContactController extends Controller
             'user_id' => auth()->id(),
             'name' => $data['name'],
             'email' => $data['email'],
-            'subject' => $data['subject'],
+            'subject' => $data['subject'] ?? null,
             'message' => $data['message'],
         ]);
 

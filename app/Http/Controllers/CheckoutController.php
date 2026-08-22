@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryHistory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -62,11 +63,47 @@ class CheckoutController extends Controller
             ]);
 
             foreach ($products as $product) {
+                $qty = $cart[$product->id]['quantity'];
+                $size = $cart[$product->id]['size'] ?? null;
+
+                if ($size) {
+                    $sizeStock = $product->sizeStock()->where('size', $size)->first();
+                    if (!$sizeStock || $sizeStock->quantity < $qty) {
+                        throw new \Exception("Insufficient stock for {$product->name} (Size {$size}).");
+                    }
+                } else {
+                    if (!$product->stock) {
+                        throw new \Exception("No stock record for {$product->name}.");
+                    }
+                    $available = $product->stock->quantity ?? 0;
+                    if ($available < $qty) {
+                        throw new \Exception("Insufficient stock for {$product->name}.");
+                    }
+                }
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
-                    'quantity' => $cart[$product->id]['quantity'],
+                    'quantity' => $qty,
                     'price_at_sale' => $product->price,
+                ]);
+
+                $previous = $product->stock->quantity;
+
+                if ($size) {
+                    $sizeStock->decrement('quantity', $qty);
+                }
+
+                $product->stock()->decrement('quantity', $qty);
+
+                InventoryHistory::create([
+                    'product_id' => $product->id,
+                    'previous_quantity' => $previous,
+                    'new_quantity' => $previous - $qty,
+                    'change_amount' => -$qty,
+                    'change_type' => 'sale',
+                    'notes' => 'Order #' . $order->id,
+                    'changed_by' => Auth::id(),
                 ]);
             }
 
@@ -76,7 +113,7 @@ class CheckoutController extends Controller
             return redirect()->route('orders.confirmation', $order);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Something went wrong. Please try again.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 

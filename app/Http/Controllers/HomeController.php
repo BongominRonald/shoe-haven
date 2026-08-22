@@ -33,7 +33,8 @@ class HomeController extends Controller
             ->take(8)
             ->toArray();
         $recentProducts = !empty($recentIds)
-            ? Product::whereIn('id', $recentIds)->orderByRaw('FIELD(id,' . implode(',', $recentIds) . ')')->get()
+            ? Product::whereIn('id', $recentIds)->get()
+                ->sortBy(fn ($product) => array_search($product->id, $recentIds))->values()
             : collect();
 
         return view('welcome', [

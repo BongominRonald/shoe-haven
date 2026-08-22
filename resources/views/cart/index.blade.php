@@ -18,7 +18,7 @@
         </div>
     @else
         <div class="row g-4">
-            <div class="col-lg-8">
+            <div class="col-sm-8">
                 @foreach ($products as $product)
                     <div class="d-flex align-items-center justify-content-between border-bottom py-3 sh-cart-row">
                         <div class="d-flex align-items-center gap-3">
@@ -54,7 +54,7 @@
                 @endforeach
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-sm-4">
                 <div class="sh-cart-sidebar">
                 @if (!auth()->check())
                     <div class="sh-summary p-4 text-center">

@@ -22,11 +22,11 @@ class ProductStock extends Model
 
     public function sizeStock(): HasMany
     {
-        return $this->hasMany(ProductSizeStock::class, 'product_id', 'product_id');
+        return $this->hasMany(ProductSizeStock::class);
     }
 
     public function inventoryHistory(): HasMany
     {
-        return $this->hasMany(InventoryHistory::class, 'product_id', 'product_id');
+        return $this->hasMany(InventoryHistory::class);
     }
 }

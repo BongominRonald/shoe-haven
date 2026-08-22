@@ -105,9 +105,8 @@ class ShopController extends Controller
             ->toArray();
 
         $products = !empty($recentIds)
-            ? Product::with('category')->whereIn('id', $recentIds)
-                ->orderByRaw('FIELD(id,' . implode(',', $recentIds) . ')')
-                ->get()
+            ? Product::with('category')->whereIn('id', $recentIds)->get()
+                ->sortBy(fn ($product) => array_search($product->id, $recentIds))->values()
             : collect();
 
         return view('shop.recently-viewed', compact('products'));

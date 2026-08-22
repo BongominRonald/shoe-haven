@@ -7,6 +7,10 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductStock;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -42,14 +46,17 @@ class ProductController extends Controller
             'brand' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'image' => 'required|url|max:500',
+            'image' => 'nullable|string|max:500',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:4096',
             'category_id' => 'required|exists:categories,id',
             'is_new' => 'boolean',
             'discount' => 'nullable|integer|min:0|max:100',
             'stock' => 'required|integer|min:0',
         ]);
 
+        $this->validateImageSource($request, $data['image'] ?? null);
         $data['is_new'] = $request->boolean('is_new');
+        $data['image'] = $this->resolveImage($request, null);
 
         $product = Product::create($data);
 
@@ -79,14 +86,17 @@ class ProductController extends Controller
             'brand' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'image' => 'required|url|max:500',
+            'image' => 'nullable|string|max:500',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:4096',
             'category_id' => 'required|exists:categories,id',
             'is_new' => 'boolean',
             'discount' => 'nullable|integer|min:0|max:100',
             'stock' => 'required|integer|min:0',
         ]);
 
+        $this->validateImageSource($request, $data['image'] ?? null);
         $data['is_new'] = $request->boolean('is_new');
+        $data['image'] = $this->resolveImage($request, $product);
         $product->update($data);
 
         $product->stock()->updateOrCreate(
@@ -100,10 +110,68 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        $product->stock()->delete();
-        $product->delete();
+        if ($product->orderItems()->exists()) {
+            return redirect()->route('admin.products.index')
+                ->withErrors(['error' => 'This product cannot be deleted because it has been referenced by an order.']);
+        }
+
+        $image = $product->image;
+
+        DB::transaction(function () use ($product) {
+            $product->delete();
+        });
+
+        if (Str::startsWith($image, 'storage/')) {
+            Storage::disk('public')->delete(Str::after($image, 'storage/'));
+        }
 
         return redirect()->route('admin.products.index')
             ->with('status', 'Product deleted successfully.');
+    }
+
+    private function validateImageSource(Request $request, ?string $image): void
+    {
+        if ($request->hasFile('image_file') || blank($image)) {
+            return;
+        }
+
+        $isUrl = filter_var($image, FILTER_VALIDATE_URL) !== false;
+        $isStoredPath = Str::startsWith($image, ['storage/', 'images/']);
+
+        if (! $isUrl && ! $isStoredPath) {
+            throw ValidationException::withMessages([
+                'image' => 'Please provide a valid image URL or a valid local image path.',
+            ]);
+        }
+    }
+
+    private function resolveImage(Request $request, ?Product $product): string
+    {
+        if ($request->hasFile('image_file')) {
+            if ($product) {
+                $this->deleteStoredImage($product);
+            }
+
+            return 'storage/'.$request->file('image_file')->store('products', 'public');
+        }
+
+        if ($request->filled('image')) {
+            return $request->input('image');
+        }
+
+        if ($product) {
+            return $product->image;
+        }
+
+        throw ValidationException::withMessages([
+            'image_file' => 'Please upload an image or paste an image URL.',
+        ]);
+    }
+
+    private function deleteStoredImage(?Product $product): void
+    {
+        if ($product && Str::startsWith($product->image, 'storage/')) {
+            Storage::disk('public')->delete(Str::after($product->image, 'storage/'));
+        }
     }
 }

@@ -144,7 +144,7 @@
             <div class="col-md-4 col-lg-3">
                 <div class="text-center">
                     <div class="mx-auto mb-3" style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--sh-orange), #e65c00); display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-person-fs-2 text-white" style="font-size: 2.5rem;"></i>
+                        <i class="bi bi-person-fill text-white" style="font-size: 2.5rem;"></i>
                     </div>
                     <h6 class="fw-bold mb-1">Eng Bongomin Ronald</h6>
                     <small class="text-muted">Head of Logistics</small>

@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\AboutController;
-use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\HeroController as AdminHeroController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
@@ -24,8 +27,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 /* Admin */
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
-    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/', DashboardController::class)->name('dashboard');
     Route::resource('products', AdminProductController::class);
+    Route::resource('categories', AdminCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('/inventory/{product}/stock', [InventoryController::class, 'updateStock'])->name('inventory.update-stock');
     Route::get('/hero', [AdminHeroController::class, 'edit'])->name('hero.edit');
@@ -35,6 +39,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::post('/preferences', [\App\Http\Controllers\Admin\PreferencesController::class, 'update'])->name('preferences.update');
+    Route::post('/preferences/reset', [\App\Http\Controllers\Admin\PreferencesController::class, 'reset'])->name('preferences.reset');
+    Route::get('/messages', [ContactMessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{message}', [ContactMessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{message}/read', [ContactMessageController::class, 'markRead'])->name('messages.mark-read');
+    Route::get('/newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter.index');
+    Route::post('/newsletter/{subscriber}/toggle', [AdminNewsletterController::class, 'toggle'])->name('newsletter.toggle');
 });
 
 /*

@@ -18,6 +18,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'sidebar_prefs',
     ];
 
     protected $hidden = [
@@ -30,7 +31,29 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'sidebar_prefs' => 'array',
         ];
+    }
+
+    public function sidebarPref(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->sidebar_prefs ?? [], $key, $default);
+    }
+
+    public function updateSidebarPrefs(array $prefs): void
+    {
+        $merged = array_replace($this->sidebar_prefs ?? [], $prefs);
+        $this->update(['sidebar_prefs' => $merged]);
+    }
+
+    public function roleNames(): array
+    {
+        return $this->roles()->pluck('role')->all();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roles()->where('role', $role)->exists();
     }
 
     public function profile(): HasOne
@@ -75,6 +98,10 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('role', 'admin');
+        }
+
         return $this->roles()->where('role', 'admin')->exists();
     }
 }
