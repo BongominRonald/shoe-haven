@@ -58,7 +58,7 @@
                     <td class="text-end">
                         <div class="btn-group">
                             <a href="{{ route('admin.products.edit',$product) }}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ route('admin.products.destroy',$product) }}" method="POST" onsubmit="return confirm('Delete {{ addslashes($product->name) }}?')">
+                            <form action="{{ route('admin.products.destroy',$product) }}" method="POST" onsubmit="return confirm('Delete ' + {{ json_encode($product->name) }} + '?')">
                                 @csrf @method('DELETE')
                                 <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                             </form>

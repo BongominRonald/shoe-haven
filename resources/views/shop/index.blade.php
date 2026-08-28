@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Shop — ' . config('app.name', 'Shoe Haven'))
+@section('meta-description', 'Browse our collection of premium sneakers, boots, heels and more. Free delivery across Uganda.')
 
 @section('content')
 <div class="d-flex">

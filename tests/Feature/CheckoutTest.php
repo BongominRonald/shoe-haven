@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\InventoryHistory;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\ProductSizeStock;
 use App\Models\ProductStock;
 use App\Models\User;
@@ -14,8 +12,8 @@ use Tests\TestCase;
 
 class CheckoutTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesShopData;
+    use RefreshDatabase;
 
     private function validCheckoutPayload(): array
     {
@@ -23,6 +21,10 @@ class CheckoutTest extends TestCase
             'name' => 'John Buyer',
             'phone' => '0777123456',
             'address' => 'Kampala, Uganda',
+            'region' => 'Central',
+            'district' => 'Kampala',
+            'area' => 'Central Division',
+            'landmark' => 'Near City Hall',
             'payment_method' => 'mtn',
         ];
     }

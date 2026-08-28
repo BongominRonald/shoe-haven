@@ -12,6 +12,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::withCount('products')->orderBy('name')->get();
+
         return view('admin.categories.index', compact('categories'));
     }
 
@@ -23,6 +24,12 @@ class CategoryController extends Controller
         ]);
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        if ($data['slug'] === '') {
+            return back()->withErrors(['slug' => 'The category name must contain letters or numbers.']);
+        }
+        if (Category::where('slug', $data['slug'])->exists()) {
+            return back()->withErrors(['slug' => 'That category URL slug is already in use.']);
+        }
         Category::create($data);
 
         return back()->with('status', 'Category created successfully.');
@@ -31,11 +38,17 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:100|unique:categories,name,' . $category->id,
-            'slug' => 'nullable|string|max:100|unique:categories,slug,' . $category->id,
+            'name' => 'required|string|max:100|unique:categories,name,'.$category->id,
+            'slug' => 'nullable|string|max:100|unique:categories,slug,'.$category->id,
         ]);
 
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
+        if ($data['slug'] === '') {
+            return back()->withErrors(['slug' => 'The category name must contain letters or numbers.']);
+        }
+        if (Category::where('slug', $data['slug'])->where('id', '!=', $category->id)->exists()) {
+            return back()->withErrors(['slug' => 'That category URL slug is already in use.']);
+        }
         $category->update($data);
 
         return back()->with('status', 'Category updated successfully.');
@@ -48,6 +61,7 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+
         return back()->with('status', 'Category deleted successfully.');
     }
 }

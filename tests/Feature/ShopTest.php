@@ -2,18 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\ProductSizeStock;
-use App\Models\ProductStock;
+use App\Models\ProductDescription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Concerns\CreatesShopData;
 use Tests\TestCase;
 
 class ShopTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesShopData;
+    use RefreshDatabase;
 
     public function test_shop_index_renders_and_lists_products(): void
     {
@@ -100,7 +97,7 @@ class ShopTest extends TestCase
             'brand' => 'PumaForce',
             'price' => 220000,
         ]);
-        \App\Models\ProductDescription::create([
+        ProductDescription::create([
             'product_id' => $product->id,
             'description' => 'A timeless classic.',
         ]);

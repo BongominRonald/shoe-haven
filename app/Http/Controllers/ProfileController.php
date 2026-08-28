@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Profile;
+use App\Support\DeliveryLocations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,7 @@ class ProfileController extends Controller
             'recentOrders' => $recentOrders,
             'ordersCount' => $ordersCount,
             'wishlistCount' => $wishlistCount,
+            'deliveryLocations' => DeliveryLocations::data(),
         ]);
     }
 
@@ -54,11 +56,21 @@ class ProfileController extends Controller
         $data = $request->validate([
             'phone' => ['nullable', 'string', 'max:32', 'regex:/^[\+\d\s\-\(\)]+$/'],
             'full_name' => ['nullable', 'string', 'max:255'],
+            'delivery_region' => ['nullable', 'string', 'max:64'],
+            'delivery_district' => ['nullable', 'string', 'max:128'],
+            'delivery_area' => ['nullable', 'string', 'max:128'],
+            'delivery_landmark' => ['nullable', 'string', 'max:255'],
         ]);
+
+        if (($data['delivery_region'] ?? null) || ($data['delivery_district'] ?? null) || ($data['delivery_area'] ?? null)) {
+            if (! DeliveryLocations::isValid($data['delivery_region'] ?? '', $data['delivery_district'] ?? '', $data['delivery_area'] ?? '')) {
+                return back()->withErrors(['delivery_area' => 'Please select a valid delivery region, district and area.'])->withInput();
+            }
+        }
 
         $profile = $request->user()->profile;
 
-        if (!$profile) {
+        if (! $profile) {
             $profile = new Profile(['user_id' => $request->user()->id]);
         }
 
@@ -78,6 +90,12 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($user->orders()->exists()) {
+            return back()->withErrors([
+                'userDeletion' => 'This account has order history and cannot be deleted. Please contact support if you need your account closed.',
+            ]);
+        }
 
         Auth::logout();
 

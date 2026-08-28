@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\InventoryHistory;
 use App\Models\Product;
 use App\Models\ProductStock;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -22,17 +23,19 @@ class ProductController extends Controller
             $s = $request->string('search');
             $query->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('brand', 'like', "%{$s}%");
+                    ->orWhere('brand', 'like', "%{$s}%");
             });
         }
 
         $products = $query->latest()->paginate(30)->withQueryString();
+
         return view('admin.products.index', compact('products'));
     }
 
     public function create()
     {
         $categories = Category::all();
+
         return view('admin.products.form', [
             'categories' => $categories,
             'product' => null,
@@ -65,6 +68,18 @@ class ProductController extends Controller
             'quantity' => $data['stock'],
         ]);
 
+        if ($data['stock'] > 0) {
+            InventoryHistory::create([
+                'product_id' => $product->id,
+                'changed_by' => auth()->id(),
+                'previous_quantity' => 0,
+                'new_quantity' => $data['stock'],
+                'change_amount' => $data['stock'],
+                'change_type' => 'initial',
+                'notes' => 'Initial stock when product was created.',
+            ]);
+        }
+
         return redirect()->route('admin.products.index')
             ->with('status', 'Product created successfully.');
     }
@@ -73,6 +88,7 @@ class ProductController extends Controller
     {
         $categories = Category::all();
         $product->load('stock');
+
         return view('admin.products.form', [
             'categories' => $categories,
             'product' => $product,
@@ -96,13 +112,42 @@ class ProductController extends Controller
 
         $this->validateImageSource($request, $data['image'] ?? null);
         $data['is_new'] = $request->boolean('is_new');
-        $data['image'] = $this->resolveImage($request, $product);
-        $product->update($data);
 
-        $product->stock()->updateOrCreate(
-            ['product_id' => $product->id],
-            ['quantity' => $data['stock']]
-        );
+        $oldImage = $product->image;
+        $oldStock = (int) ($product->stock?->quantity ?? 0);
+
+        if ($request->hasFile('image_file')) {
+            $data['image'] = 'storage/'.$request->file('image_file')->store('products', 'public');
+        } elseif ($request->filled('image')) {
+            $data['image'] = $request->input('image');
+        } else {
+            $data['image'] = $product->image;
+        }
+
+        DB::transaction(function () use ($product, $data) {
+            $product->update($data);
+            $product->stock()->updateOrCreate(
+                ['product_id' => $product->id],
+                ['quantity' => $data['stock']]
+            );
+        });
+
+        $newStock = (int) $data['stock'];
+        if ($newStock !== $oldStock) {
+            InventoryHistory::create([
+                'product_id' => $product->id,
+                'changed_by' => auth()->id(),
+                'previous_quantity' => $oldStock,
+                'new_quantity' => $newStock,
+                'change_amount' => $newStock - $oldStock,
+                'change_type' => $newStock > $oldStock ? 'restock' : 'adjustment',
+                'notes' => 'Stock changed while editing product.',
+            ]);
+        }
+
+        if ($data['image'] !== $oldImage && Str::startsWith($oldImage, 'storage/')) {
+            Storage::disk('public')->delete(Str::after($oldImage, 'storage/'));
+        }
 
         return redirect()->route('admin.products.index')
             ->with('status', 'Product updated successfully.');

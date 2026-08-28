@@ -150,6 +150,51 @@
                 </div>
             </div>
 
+            {{-- Default Delivery Location --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2"></i>Default Delivery Location</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">Save your usual delivery area so checkout is faster. You can change it at any time.</p>
+                    <form method="post" action="{{ route('profile.update-details') }}" id="delivery-location-form">
+                        @csrf
+                        @method('patch')
+                        <input type="hidden" name="full_name" value="{{ old('full_name', $user->profile?->full_name ?? $user->name) }}">
+                        <input type="hidden" name="phone" value="{{ old('phone', $user->profile?->phone) }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="profile-region" class="form-label">Region</label>
+                                <select id="profile-region" name="delivery_region" class="form-select" required>
+                                    <option value="">Select region</option>
+                                    @foreach ($deliveryLocations as $region => $districts)
+                                        <option value="{{ $region }}" @selected(old('delivery_region', $user->profile?->delivery_region) === $region)>{{ $region }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="profile-district" class="form-label">District / City</label>
+                                <select id="profile-district" name="delivery_district" class="form-select" required disabled><option value="">Select district / city</option></select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="profile-area" class="form-label">Area / Town</label>
+                                <select id="profile-area" name="delivery_area" class="form-select" required disabled><option value="">Select area / town</option></select>
+                            </div>
+                            <div class="col-12">
+                                <label for="profile-landmark" class="form-label">Landmark / Building</label>
+                                <input id="profile-landmark" name="delivery_landmark" class="form-control" value="{{ old('delivery_landmark', $user->profile?->delivery_landmark) }}" placeholder="e.g. near Total Petrol Station" required>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-3">
+                            <button type="submit" class="btn btn-sh-orange"><i class="bi bi-geo-alt me-1"></i>Save Delivery Location</button>
+                            @if (session('status') === 'details-updated')
+                                <span class="text-success small fw-medium"><i class="bi bi-check-circle"></i> Saved</span>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             {{-- Contact Details --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3">
@@ -199,19 +244,19 @@
 
                         <div class="mb-3">
                             <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-                            <x-text-input id="update_password_current_password" name="current_password" type="password" class="w-100" autocomplete="current-password" />
+                            <x-password-input id="update_password_current_password" name="current_password" autocomplete="current-password" />
                             <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-1" />
                         </div>
 
                         <div class="mb-3">
                             <x-input-label for="update_password_password" :value="__('New Password')" />
-                            <x-text-input id="update_password_password" name="password" type="password" class="w-100" autocomplete="new-password" />
+                            <x-password-input id="update_password_password" name="password" autocomplete="new-password" />
                             <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-1" />
                         </div>
 
                         <div class="mb-3">
                             <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-                            <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="w-100" autocomplete="new-password" />
+                            <x-password-input id="update_password_password_confirmation" name="password_confirmation" autocomplete="new-password" />
                             <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-1" />
                         </div>
 
@@ -250,7 +295,7 @@
                                     <p class="small text-muted">{{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm.') }}</p>
                                     <div class="mb-3">
                                         <x-input-label for="password" :value="__('Password')" />
-                                        <x-text-input id="password" name="password" type="password" class="w-100" placeholder="{{ __('Enter your password') }}" />
+                                        <x-password-input id="password" name="password" placeholder="{{ __('Enter your password') }}" />
                                         <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-1" />
                                     </div>
                                 </div>
@@ -266,4 +311,34 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(() => {
+    const locations = @json($deliveryLocations);
+    const region = document.getElementById('profile-region');
+    const district = document.getElementById('profile-district');
+    const area = document.getElementById('profile-area');
+    if (!region || !district || !area) return;
+    const selectedDistrict = @json(old('delivery_district', $user->profile?->delivery_district));
+    const selectedArea = @json(old('delivery_area', $user->profile?->delivery_area));
+
+    function fill(select, values, placeholder, selected = '') {
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        values.forEach(v => select.add(new Option(v, v, false, v === selected)));
+        select.disabled = values.length === 0;
+    }
+    function districts() {
+        fill(district, Object.keys(locations[region.value] || {}), 'Select district / city', selectedDistrict);
+        areas();
+    }
+    function areas() {
+        fill(area, locations[region.value]?.[district.value] || [], 'Select area / town', district.value === selectedDistrict ? selectedArea : '');
+    }
+    region.addEventListener('change', () => { fill(district, [], 'Select district / city'); fill(area, [], 'Select area / town'); districts(); });
+    district.addEventListener('change', areas);
+    if (region.value) districts();
+})();
+</script>
+@endpush
 @endsection

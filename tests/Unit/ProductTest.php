@@ -8,6 +8,7 @@ use App\Models\ProductDescription;
 use App\Models\ProductImage;
 use App\Models\ProductSizeStock;
 use App\Models\ProductStock;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -80,7 +81,7 @@ class ProductTest extends TestCase
     public function test_product_has_many_comments(): void
     {
         $product = $this->makeProduct();
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
 
         $product->comments()->create(['user_id' => $user->id, 'rating' => 5, 'content' => 'Great shoes!']);
         $product->comments()->create(['user_id' => $user->id, 'rating' => 4, 'content' => 'Nice!']);

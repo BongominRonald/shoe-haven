@@ -3,8 +3,6 @@
 namespace Tests\System;
 
 use App\Models\Category;
-use App\Models\ContactMessage;
-use App\Models\NewsletterSubscription;
 use App\Models\Product;
 use App\Models\ProductStock;
 use Illuminate\Foundation\Testing\RefreshDatabase;

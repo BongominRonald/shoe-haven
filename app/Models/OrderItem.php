@@ -12,7 +12,7 @@ class OrderItem extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'price_at_sale'];
+    protected $fillable = ['order_id', 'product_id', 'size', 'quantity', 'price_at_sale'];
 
     public function order(): BelongsTo
     {

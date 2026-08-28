@@ -2,14 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\ProductStock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Concerns\CreatesShopData;
 use Tests\TestCase;
 
 class CartFlowTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesShopData;
+    use RefreshDatabase;
 
     public function test_cart_index_renders_empty_cart(): void
     {
@@ -30,7 +31,8 @@ class CartFlowTest extends TestCase
 
     public function test_product_can_be_added_without_size(): void
     {
-        $product = $this->makeProductWithStock();
+        $product = $this->makeProduct();
+        ProductStock::create(['product_id' => $product->id, 'quantity' => 20]);
 
         $this->post("/cart/{$product->id}/add", ['quantity' => 1]);
 
@@ -40,7 +42,8 @@ class CartFlowTest extends TestCase
 
     public function test_adding_same_product_increments_quantity(): void
     {
-        $product = $this->makeProductWithStock();
+        $product = $this->makeProduct();
+        ProductStock::create(['product_id' => $product->id, 'quantity' => 20]);
 
         $this->post("/cart/{$product->id}/add", ['quantity' => 2]);
         $this->post("/cart/{$product->id}/add", ['quantity' => 3]);

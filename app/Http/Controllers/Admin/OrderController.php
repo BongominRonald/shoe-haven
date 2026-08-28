@@ -16,18 +16,14 @@ class OrderController extends Controller
             $query->where('status', $request->string('status'));
         }
 
-        if ($request->filled('payment_status')) {
-            $query->where('payment_status', $request->string('payment_status'));
-        }
-
         if ($request->filled('search')) {
             $s = $request->string('search');
             $query->where(function ($q) use ($s) {
                 $q->where('id', 'like', "%{$s}%")
-                  ->orWhereHas('user', function ($u) use ($s) {
-                      $u->where('name', 'like', "%{$s}%")
-                        ->orWhere('email', 'like', "%{$s}%");
-                  });
+                    ->orWhereHas('user', function ($u) use ($s) {
+                        $u->where('name', 'like', "%{$s}%")
+                            ->orWhere('email', 'like', "%{$s}%");
+                    });
             });
         }
 
@@ -39,6 +35,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $order->load('user', 'items.product');
+
         return view('admin.orders.show', compact('order'));
     }
 

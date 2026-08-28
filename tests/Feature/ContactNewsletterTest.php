@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\ContactMessage;
 use App\Models\NewsletterSubscriber;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

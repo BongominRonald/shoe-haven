@@ -8,7 +8,7 @@
 
         <div class="mb-3">
             <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="w-100" type="password" name="password" required autofocus autocomplete="current-password" />
+            <x-password-input id="password" name="password" required autofocus autocomplete="current-password" />
             <x-input-error :messages="$errors->get('password')" class="mt-1" />
         </div>
 

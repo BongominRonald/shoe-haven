@@ -3,10 +3,11 @@
 namespace Tests\System;
 
 use App\Models\Category;
-use App\Models\InventoryHistory;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductSizeStock;
 use App\Models\ProductStock;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -29,13 +30,14 @@ class BuyerJourneyTest extends TestCase
         ]);
 
         ProductStock::create(['product_id' => $product->id, 'quantity' => 10]);
+        ProductSizeStock::create(['product_id' => $product->id, 'size' => '42', 'quantity' => 10]);
 
         return $product;
     }
 
     public function test_full_buyer_journey_from_registration_to_review(): void
     {
-        $password = 'secret-password';
+        $password = 'Secret1Pass';
         $email = 'buyer@example.com';
 
         $this->post('/register', [
@@ -66,6 +68,10 @@ class BuyerJourneyTest extends TestCase
                 'name' => 'Buyer One',
                 'phone' => '+256 700 111 111',
                 'address' => 'Kampala Road, Kampala',
+                'region' => 'Central',
+                'district' => 'Kampala',
+                'area' => 'Central Division',
+                'landmark' => 'Near City Hall',
                 'payment_method' => 'mtn',
             ])
             ->assertRedirect();
@@ -77,16 +83,19 @@ class BuyerJourneyTest extends TestCase
         $this->get("/orders/{$order->id}/confirmation")
             ->assertOk()
             ->assertSee('Order Confirmed!')
-            ->assertSee('#' . $order->id);
+            ->assertSee('#'.$order->id);
 
         $this->get('/orders')
             ->assertOk()
-            ->assertSee('#' . $order->id);
+            ->assertSee('#'.$order->id);
 
         $this->get("/orders/{$order->id}")
             ->assertOk()
             ->assertSee('Journey Runner Shoe')
             ->assertSee('2');
+
+        // Confirm the order so the review purchase check passes
+        $order->update(['status' => 'confirmed']);
 
         $this->post("/reviews/{$product->id}", [
             'rating' => 5,
@@ -109,9 +118,8 @@ class BuyerJourneyTest extends TestCase
 
     public function test_buyer_journey_decrements_stock_and_records_inventory_history(): void
     {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $product = $this->makeProduct();
-        $product->sizeStock()->create(['size' => '42', 'quantity' => 10]);
 
         $this->actingAs($user)
             ->withSession(['cart' => [$product->id => ['quantity' => 3, 'size' => '42']]])
@@ -119,6 +127,10 @@ class BuyerJourneyTest extends TestCase
                 'name' => $user->name,
                 'phone' => '+256 700 222 222',
                 'address' => 'Entebbe Road',
+                'region' => 'Central',
+                'district' => 'Wakiso',
+                'area' => 'Kira',
+                'landmark' => 'Near Kira Town',
                 'payment_method' => 'airtel',
             ])
             ->assertRedirect();
@@ -143,8 +155,8 @@ class BuyerJourneyTest extends TestCase
 
     public function test_buyer_cannot_view_another_buyers_order(): void
     {
-        $owner = \App\Models\User::factory()->create();
-        $other = \App\Models\User::factory()->create();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
         $product = $this->makeProduct();
 
         $this->actingAs($owner)
@@ -153,6 +165,10 @@ class BuyerJourneyTest extends TestCase
                 'name' => $owner->name,
                 'phone' => '+256 700 333 333',
                 'address' => 'Kololo',
+                'region' => 'Central',
+                'district' => 'Kampala',
+                'area' => 'Nakawa Division',
+                'landmark' => 'Kololo Crescent',
                 'payment_method' => 'mtn',
             ]);
 
@@ -164,7 +180,7 @@ class BuyerJourneyTest extends TestCase
 
     public function test_checkout_rejects_oversized_quantity(): void
     {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $product = $this->makeProduct();
 
         $this->actingAs($user)
@@ -173,6 +189,10 @@ class BuyerJourneyTest extends TestCase
                 'name' => $user->name,
                 'phone' => '+256 700 444 444',
                 'address' => 'Ntinda',
+                'region' => 'Central',
+                'district' => 'Kampala',
+                'area' => 'Nakawa Division',
+                'landmark' => 'Ntinda Hill Road',
                 'payment_method' => 'mtn',
             ])
             ->assertSessionHasErrors('error');
@@ -186,7 +206,7 @@ class BuyerJourneyTest extends TestCase
 
     public function test_wishlist_flow_for_logged_in_buyer(): void
     {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $product = $this->makeProduct();
 
         $this->actingAs($user)->post("/wishlist/{$product->id}/toggle")->assertRedirect();

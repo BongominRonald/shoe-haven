@@ -19,13 +19,6 @@
 <div class="alert alert-danger border-0 shadow-sm"><strong><i class="bi bi-x-circle me-2"></i>Out of stock:</strong> {{ $outOfStock->pluck('name')->join(', ') }}</div>
 @endif
 
-@if(isset($filter) && in_array($filter, ['low-stock', 'out-of-stock'], true))
-<div class="alert alert-info border-0 shadow-sm d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-funnel me-2"></i>Showing <strong>{{ $filter === 'low-stock' ? 'low stock' : 'out of stock' }}</strong> products ({{ $products->count() }}).</span>
-    <a href="{{ route('admin.inventory.index') }}" class="btn btn-sm btn-outline-secondary">Clear filter</a>
-</div>
-@endif
-
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#stockTab"><i class="bi bi-box-seam me-1"></i>Stock Levels</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#historyTab"><i class="bi bi-clock-history me-1"></i>Adjustment History</button></li>

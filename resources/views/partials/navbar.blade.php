@@ -16,7 +16,7 @@
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.index') && request('category') === $cat->slug ? 'active' : '' }}" href="{{ route('shop.index', ['category' => $cat->slug]) }}">{{ $cat->name }}</a></li>
                     @endforeach
                 @endif
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.index') ? 'active' : '' }}" href="{{ route('shop.index') }}">Shop All</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('shop.index') && !request()->filled('category') && !request()->filled('brand') && !request()->filled('search') ? 'active' : '' }}" href="{{ route('shop.index') }}">Shop All</a></li>
             </ul>
             <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
                 <a href="{{ route('cart.index') }}" class="sh-cart-icon">

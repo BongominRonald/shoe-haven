@@ -62,7 +62,7 @@
                                 <img src="{{ Str::startsWith($item->product?->image ?? '', 'http') ? $item->product->image : asset($item->product?->image ?? '') }}"
                                      alt="" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
                                 <div>
-                                    <h6 class="fw-bold mb-1">{{ $item->product?->name ?? 'Deleted Product' }}</h6>
+                                    <h6 class="fw-bold mb-1">{{ $item->product?->name ?? 'Deleted Product' }}@if($item->size) <span class="badge bg-secondary ms-1">Size {{ $item->size }}</span>@endif</h6>
                                     <small class="text-white-50">UGX {{ number_format($item->price_at_sale) }} × {{ $item->quantity }}</small>
                                 </div>
                             </div>
@@ -92,6 +92,21 @@
                         <span>Total</span>
                         <span style="color: var(--sh-orange);">UGX {{ number_format($order->total_amount) }}</span>
                     </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-0 mb-3">
+                <div class="card-header bg-transparent border-secondary py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2"></i>Delivery Location</h5>
+                </div>
+                <div class="card-body small">
+                    <div class="fw-semibold">{{ $order->shipping_area }}, {{ $order->shipping_district }}</div>
+                    <div class="text-white-50">{{ $order->shipping_region }}</div>
+                    <div class="mt-2"><span class="text-white-50">Landmark:</span> {{ $order->shipping_landmark }}</div>
+                    @if ($order->shipping_address)
+                        <div class="mt-1"><span class="text-white-50">Directions:</span> {{ $order->shipping_address }}</div>
+                    @endif
+                    <div class="mt-1"><span class="text-white-50">Phone:</span> {{ $order->shipping_phone }}</div>
                 </div>
             </div>
 

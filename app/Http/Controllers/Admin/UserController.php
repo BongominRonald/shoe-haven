@@ -18,17 +18,19 @@ class UserController extends Controller
             $s = $request->string('search');
             $query->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%");
+                    ->orWhere('email', 'like', "%{$s}%");
             });
         }
 
         $users = $query->latest()->paginate(20)->withQueryString();
+
         return view('admin.users.index', compact('users'));
     }
 
     public function show(User $user)
     {
         $user->load('orders.items');
+
         return view('admin.users.show', compact('user'));
     }
 }

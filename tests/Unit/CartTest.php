@@ -44,6 +44,6 @@ class CartTest extends TestCase
 
     public function test_cart_controller_is_instantiable(): void
     {
-        $this->assertInstanceOf(CartController::class, new CartController());
+        $this->assertInstanceOf(CartController::class, new CartController);
     }
 }

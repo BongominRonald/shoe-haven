@@ -4,7 +4,6 @@ namespace Tests\System;
 
 use App\Models\Category;
 use App\Models\HeroSection;
-use App\Models\InventoryHistory;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -43,6 +42,10 @@ class AdminJourneyTest extends TestCase
                 'name' => $buyer->name,
                 'phone' => '+256 700 555 555',
                 'address' => 'Muyenga',
+                'region' => 'Central',
+                'district' => 'Kampala',
+                'area' => 'Makindye Division',
+                'landmark' => 'Muyenga Hill',
                 'payment_method' => 'mtn',
             ]);
 
@@ -118,7 +121,7 @@ class AdminJourneyTest extends TestCase
         $admin = $this->makeAdmin();
         $order = $this->makeBuyerOrder();
 
-        $this->actingAs($admin)->get('/admin/orders')->assertOk()->assertSee('#' . $order->id);
+        $this->actingAs($admin)->get('/admin/orders')->assertOk()->assertSee('#'.$order->id);
         $this->actingAs($admin)->get("/admin/orders/{$order->id}")->assertOk()->assertSee('Admin Managed Shoe');
 
         $this->actingAs($admin)

@@ -16,7 +16,7 @@ trait CreatesShopData
 
     protected function makeProduct(array $overrides = []): Product
     {
-        if (!isset($overrides['category_id'])) {
+        if (! isset($overrides['category_id'])) {
             $overrides['category_id'] = $this->makeCategory('Sneakers', 'sneakers')->id;
         }
 

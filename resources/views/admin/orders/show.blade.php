@@ -61,7 +61,7 @@
                                      alt="" class="w-100 h-100" style="object-fit: cover;">
                             </div>
                             <div>
-                                <h6 class="fw-bold mb-1">{{ $item->product?->name ?? 'Deleted Product' }}</h6>
+                                <h6 class="fw-bold mb-1">{{ $item->product?->name ?? 'Deleted Product' }}@if($item->size) <span class="badge bg-secondary ms-1">Size {{ $item->size }}</span>@endif</h6>
                                 <small class="text-muted">UGX {{ number_format($item->price_at_sale) }} × {{ $item->quantity }}</small>
                             </div>
                         </div>
@@ -91,8 +91,12 @@
                         <span>{{ $order->payment_phone }}</span>
                     </div>
                     <div class="col-md-6">
-                        <small class="text-muted d-block">Delivery Address</small>
-                        <span>{{ $order->shipping_address }}</span>
+                        <small class="text-muted d-block">Delivery Location</small>
+                        <span class="d-block">{{ $order->shipping_area }}, {{ $order->shipping_district }}, {{ $order->shipping_region }}</span>
+                        <small class="text-muted d-block mt-1">{{ $order->shipping_landmark }}</small>
+                        @if ($order->shipping_address)
+                            <small class="text-muted d-block mt-1">{{ $order->shipping_address }}</small>
+                        @endif
                     </div>
                 </div>
             </div>

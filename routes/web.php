@@ -1,13 +1,14 @@
 <?php
 
 use App\Http\Controllers\AboutController;
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactMessageController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HeroController as AdminHeroController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PreferencesController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -18,8 +19,11 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WishlistController;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -39,8 +43,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
-    Route::post('/preferences', [\App\Http\Controllers\Admin\PreferencesController::class, 'update'])->name('preferences.update');
-    Route::post('/preferences/reset', [\App\Http\Controllers\Admin\PreferencesController::class, 'reset'])->name('preferences.reset');
+    Route::post('/preferences', [PreferencesController::class, 'update'])->name('preferences.update');
+    Route::post('/preferences/reset', [PreferencesController::class, 'reset'])->name('preferences.reset');
     Route::get('/messages', [ContactMessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/{message}', [ContactMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{message}/read', [ContactMessageController::class, 'markRead'])->name('messages.mark-read');
@@ -64,7 +68,8 @@ Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show'
 */
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/{product}/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/{product}/add', [CartController::class, 'add'])->name('cart.add')
+    ->middleware('throttle:30,1');
 Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{product}', [CartController::class, 'remove'])->name('cart.remove');
 
@@ -76,7 +81,8 @@ Route::delete('/cart/{product}', [CartController::class, 'remove'])->name('cart.
 
 Route::middleware('auth')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')
+        ->middleware('throttle:10,1');
 });
 
 /*
@@ -99,8 +105,9 @@ Route::middleware('auth')->name('orders.')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle')
+        ->middleware('throttle:30,1');
 });
-Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
 /*
 |--------------------------------------------------------------------------
@@ -109,7 +116,8 @@ Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])
 */
 
 Route::middleware('auth')->group(function () {
-    Route::post('/reviews/{product}', [App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/reviews/{product}', [ReviewController::class, 'store'])->name('reviews.store')
+        ->middleware('throttle:10,1');
 });
 
 /*
@@ -118,7 +126,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/recently-viewed', [App\Http\Controllers\ShopController::class, 'recentlyViewed'])->name('shop.recently-viewed');
+Route::get('/recently-viewed', [ShopController::class, 'recentlyViewed'])->name('shop.recently-viewed');
 
 /*
 |--------------------------------------------------------------------------
@@ -128,10 +136,17 @@ Route::get('/recently-viewed', [App\Http\Controllers\ShopController::class, 'rec
 
 Route::get('/about', [AboutController::class, 'index'])->name('about.index');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
-Route::get('/help', function () { return view('help.index'); })->name('help.index');
-Route::get('/privacy', function () { return view('privacy.index'); })->name('privacy.index');
-Route::get('/terms', function () { return view('terms.index'); })->name('terms.index');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')
+    ->middleware('throttle:5,1');
+Route::get('/help', function () {
+    return view('help.index');
+})->name('help.index');
+Route::get('/privacy', function () {
+    return view('privacy.index');
+})->name('privacy.index');
+Route::get('/terms', function () {
+    return view('terms.index');
+})->name('terms.index');
 
 /*
 |--------------------------------------------------------------------------
@@ -139,7 +154,8 @@ Route::get('/terms', function () { return view('terms.index'); })->name('terms.i
 |--------------------------------------------------------------------------
 */
 
-Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')
+    ->middleware('throttle:5,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -161,8 +177,9 @@ Route::get('/dashboard', function () {
 })->name('dashboard');
 
 Route::get('/sitemap.xml', function () {
-    $products = App\Models\Product::with('category')->get();
-    $categories = App\Models\Category::all();
+    $products = Product::with('category')->get();
+    $categories = Category::all();
+
     return response()->view('sitemap', compact('products', 'categories'))->header('Content-Type', 'application/xml');
 });
 

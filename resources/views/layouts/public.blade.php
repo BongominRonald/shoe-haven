@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#14141a">
+    <meta name="description" content="@yield('meta-description', 'Premium footwear store in Uganda — sneakers, boots, heels and more with free delivery.')">
+    <meta property="og:title" content="@yield('title', config('app.name', 'Shoe Haven'))">
+    <meta property="og:description" content="@yield('meta-description', 'Premium footwear store in Uganda — sneakers, boots, heels and more with free delivery.')">
+    <meta property="og:image" content="@yield('meta-image', asset('images/hero-banner.jpg'))">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name', 'Shoe Haven') }}">
     <title>@yield('title', config('app.name', 'Shoe Haven'))</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">

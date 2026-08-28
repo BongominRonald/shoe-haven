@@ -22,6 +22,20 @@
         </div>
     </div>
 
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-geo-alt" style="color: var(--sh-orange);"></i>
+                <h6 class="fw-bold mb-0">Delivery Location</h6>
+            </div>
+            <div class="fw-semibold">{{ $order->shipping_area }}, {{ $order->shipping_district }}, {{ $order->shipping_region }}</div>
+            <div class="text-muted small">{{ $order->shipping_landmark }}</div>
+            @if ($order->shipping_address)
+                <div class="text-muted small mt-1">{{ $order->shipping_address }}</div>
+            @endif
+        </div>
+    </div>
+
     <div class="row g-4 mt-3">
         <div class="col-md-4">
             <div class="text-center p-4 rounded-4" style="background: rgba(255,255,255,0.03);">

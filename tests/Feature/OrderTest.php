@@ -10,8 +10,8 @@ use Tests\TestCase;
 
 class OrderTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesShopData;
+    use RefreshDatabase;
 
     private function makeOrder(User $user, array $overrides = []): Order
     {
@@ -22,7 +22,7 @@ class OrderTest extends TestCase
             'payment_phone' => '0777123456',
             'status' => 'pending',
             'payment_status' => 'pending',
-            'transaction_id' => 'TXN-' . strtoupper(substr(uniqid(), -8)),
+            'transaction_id' => 'TXN-'.strtoupper(substr(uniqid(), -8)),
             'payment_initiated_at' => now(),
             'shipping_name' => 'John Buyer',
             'shipping_address' => 'Kampala, Uganda',
@@ -45,7 +45,7 @@ class OrderTest extends TestCase
         $response = $this->actingAs($owner)->get('/orders');
 
         $response->assertOk()
-            ->assertSee('#' . $myOrder->id);
+            ->assertSee('#'.$myOrder->id);
     }
 
     public function test_order_detail_page_renders(): void
@@ -98,7 +98,7 @@ class OrderTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Order Confirmed!')
-            ->assertSee('#' . $order->id)
+            ->assertSee('#'.$order->id)
             ->assertSee('View Order');
     }
 

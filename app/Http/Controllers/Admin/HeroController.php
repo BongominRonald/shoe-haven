@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\HeroSection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class HeroController extends Controller
 {
     public function edit()
     {
-        $hero = HeroSection::getActive() ?? new HeroSection();
+        $hero = HeroSection::getActive() ?? new HeroSection;
 
         return view('admin.hero.edit', compact('hero'));
     }
@@ -37,7 +36,7 @@ class HeroController extends Controller
         $hero = HeroSection::getActive();
 
         if (! $hero) {
-            $hero = new HeroSection();
+            $hero = new HeroSection;
             $hero->is_active = true;
         }
 
@@ -64,7 +63,7 @@ class HeroController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('images', 'public');
-            $data['image'] = 'images/' . basename($path);
+            $data['image'] = 'images/'.basename($path);
         }
 
         $hero->fill($data);

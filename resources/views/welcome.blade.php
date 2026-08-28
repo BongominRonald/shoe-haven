@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', config('app.name', 'Shoe Haven') . ' — Step Into Style')
+@section('meta-description', 'Uganda\'s premium footwear destination. Shop sneakers, boots, heels and more with free delivery.')
 
 @section('content')
 {{-- ============ HERO CAROUSEL ============ --}}
@@ -18,7 +19,7 @@
                         <div class="row align-items-center g-5">
                             <div class="col-lg-6">
                                 <div class="eyebrow mb-3">New Season Collection</div>
-                                <h1 class="mb-4">{!! $h->headline !!}</h1>
+                                <h1 class="mb-4">{!! \App\Support\HtmlSanitizer::clean($h->headline) !!}</h1>
                                 <p class="lead mb-4">{{ $h->subtitle }}</p>
                                 <div class="d-flex gap-3 flex-wrap">
                                     <a href="{{ $h->button_url }}" class="btn btn-sh-orange btn-lg">{{ $h->button_text }}</a>
@@ -27,7 +28,7 @@
                                 <div class="d-flex gap-4 mt-5">
                                     @foreach ($h->stats ?? [] as $stat)
                                         <div>
-                                            <div class="fs-4 fw-bold text-white">{!! $stat['value'] !!}{!! !empty($stat['icon']) ? '<i class="bi bi-star-fill" style="color: var(--sh-orange); font-size: .7em;"></i>' : '' !!}</div>
+                                            <div class="fs-4 fw-bold text-white">{{ $stat['value'] }}{!! !empty($stat['icon']) ? '<i class="bi bi-star-fill" style="color: var(--sh-orange); font-size: .7em;"></i>' : '' !!}</div>
                                             <small class="text-white-50">{{ $stat['label'] }}</small>
                                         </div>
                                     @endforeach

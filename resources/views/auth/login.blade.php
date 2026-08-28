@@ -21,10 +21,8 @@
 
         <div class="mb-3">
             <x-input-label for="password" :value="__('Password')" />
-            <x-text-input
+            <x-password-input
                 id="password"
-                class="form-control"
-                type="password"
                 name="password"
                 required
                 autocomplete="current-password"

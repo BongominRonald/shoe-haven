@@ -22,7 +22,7 @@
 
                     <div class="mb-3">
                         <x-input-label for="password" :value="__('Password')" />
-                        <x-text-input id="password" name="password" type="password" class="w-100" placeholder="{{ __('Password') }}" />
+                        <x-password-input id="password" name="password" placeholder="{{ __('Password') }}" />
                         <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-1" />
                     </div>
                 </div>

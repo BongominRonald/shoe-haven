@@ -7,6 +7,7 @@ use App\Models\Profile;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UserTest extends TestCase
@@ -76,9 +77,9 @@ class UserTest extends TestCase
 
     public function test_password_is_hashed(): void
     {
-        $user = User::factory()->create(['password' => 'secret-password']);
+        $user = User::factory()->create(['password' => 'Secret1Pass']);
 
-        $this->assertNotSame('secret-password', $user->password);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('secret-password', $user->password));
+        $this->assertNotSame('Secret1Pass', $user->password);
+        $this->assertTrue(Hash::check('Secret1Pass', $user->password));
     }
 }

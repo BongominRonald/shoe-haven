@@ -21,20 +21,69 @@
         <div class="col-lg-7">
             <div class="card bg-dark border-0 p-4">
                 <h5 class="fw-bold mb-4">Delivery Details</h5>
-                <form action="{{ route('checkout.store') }}" method="POST">
+                <form action="{{ route('checkout.store') }}" method="POST" id="checkout-form">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-control" value="{{ old('name', auth()->user()->name ?? '') }}" required>
+                        <input type="text" name="name" class="form-control" value="{{ old('name', $profile?->full_name ?? auth()->user()->name ?? '') }}" required autocomplete="name">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone Number (MTN / Airtel)</label>
-                        <input type="tel" name="phone" class="form-control" placeholder="+256 700 000 000" value="{{ old('phone') }}" required>
+                        <input type="tel" name="phone" class="form-control" placeholder="+256 700 000 000" value="{{ old('phone', $profile?->phone) }}" required autocomplete="tel">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Delivery Address</label>
-                        <textarea name="address" class="form-control" rows="2" placeholder="Street, city, landmark" required>{{ old('address') }}</textarea>
+
+                    <div class="border rounded-3 p-3 mb-3" style="border-color: rgba(255,255,255,.12)!important;">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1"><i class="bi bi-geo-alt me-2"></i>Delivery Location</h6>
+                                <small class="text-white-50">Select your area so we can route your delivery correctly.</small>
+                            </div>
+                            @if ($profile?->delivery_region)
+                                <span class="badge bg-success-subtle text-success">Saved location</span>
+                            @endif
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="delivery-region" class="form-label">Region</label>
+                                <select id="delivery-region" name="region" class="form-select" required>
+                                    <option value="">Select region</option>
+                                    @foreach ($deliveryLocations as $region => $districts)
+                                        <option value="{{ $region }}" @selected(old('region', $profile?->delivery_region) === $region)>{{ $region }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="delivery-district" class="form-label">District / City</label>
+                                <select id="delivery-district" name="district" class="form-select" required disabled>
+                                    <option value="">Select district / city</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="delivery-area" class="form-label">Area / Town</label>
+                                <select id="delivery-area" name="area" class="form-select" required disabled>
+                                    <option value="">Select area / town</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label for="delivery-landmark" class="form-label">Landmark / Building</label>
+                                <input id="delivery-landmark" type="text" name="landmark" class="form-control" value="{{ old('landmark', $profile?->delivery_landmark) }}" placeholder="e.g. near Total Petrol Station" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="delivery-address" class="form-label">Street / Extra Directions <span class="text-white-50">(optional)</span></label>
+                                <input id="delivery-address" type="text" name="address" class="form-control" value="{{ old('address') }}" placeholder="Street, plot, apartment, floor...">
+                            </div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" name="save_location" value="1" id="save-location" @checked(old('save_location', true))>
+                            <label class="form-check-label small" for="save-location">Save this as my default delivery location</label>
+                        </div>
                     </div>
+
                     <hr class="text-secondary">
                     <h6 class="fw-bold mb-3">Payment Method</h6>
                     <div class="form-check mb-2">
@@ -89,4 +138,48 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(() => {
+    const locations = @json($deliveryLocations);
+    const regionSelect = document.getElementById('delivery-region');
+    const districtSelect = document.getElementById('delivery-district');
+    const areaSelect = document.getElementById('delivery-area');
+    const savedRegion = @json(old('region', $profile?->delivery_region));
+    const savedDistrict = @json(old('district', $profile?->delivery_district));
+    const savedArea = @json(old('area', $profile?->delivery_area));
+
+    function populate(select, values, placeholder, selected = '') {
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        values.forEach(value => {
+            const option = new Option(value, value, false, value === selected);
+            select.add(option);
+        });
+        select.disabled = values.length === 0;
+    }
+
+    function loadDistricts(selected = '') {
+        const districts = locations[regionSelect.value] ? Object.keys(locations[regionSelect.value]) : [];
+        populate(districtSelect, districts, 'Select district / city', selected);
+        loadAreas(selected ? districtSelect.value : '');
+    }
+
+    function loadAreas(district = '') {
+        const areas = locations[regionSelect.value]?.[district] ?? [];
+        populate(areaSelect, areas, 'Select area / town', district === savedDistrict ? savedArea : '');
+    }
+
+    regionSelect.addEventListener('change', () => {
+        populate(districtSelect, [], 'Select district / city');
+        populate(areaSelect, [], 'Select area / town');
+        loadDistricts();
+    });
+
+    districtSelect.addEventListener('change', () => loadAreas(districtSelect.value));
+
+    if (regionSelect.value) loadDistricts(savedDistrict);
+})();
+</script>
+@endpush
 @endsection

@@ -2,11 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
 use App\Models\HeroSection;
-use App\Models\InventoryHistory;
 use App\Models\Order;
-use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\User;
 use App\Models\UserRole;
@@ -16,8 +13,8 @@ use Tests\TestCase;
 
 class AdminTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesShopData;
+    use RefreshDatabase;
 
     private function makeAdmin(): User
     {

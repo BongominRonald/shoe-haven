@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -29,7 +30,7 @@ class GoogleController extends Controller
 
             $user = User::where('email', $googleUser->getEmail())->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = User::create([
                     'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User',
                     'email' => $googleUser->getEmail(),
@@ -43,6 +44,11 @@ class GoogleController extends Controller
             return redirect()->intended('/');
 
         } catch (\Exception $e) {
+            Log::error('Google OAuth failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return redirect('/login')
                 ->with('status', 'Google login failed. Please try again.');
         }

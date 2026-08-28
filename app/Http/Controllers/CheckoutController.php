@@ -6,6 +6,7 @@ use App\Models\InventoryHistory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Support\DeliveryLocations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,10 +24,14 @@ class CheckoutController extends Controller
         }
 
         $products = Product::whereIn('id', array_keys($cart))->get();
-        $total = $products->sum(fn($p) => $p->price * $cart[$p->id]['quantity']);
+        $total = $products->sum(fn ($p) => $p->price * $cart[$p->id]['quantity']);
 
-        return view('checkout.index', compact('products', 'cart', 'total'));
+        $profile = Auth::user()->profile;
+        $deliveryLocations = DeliveryLocations::data();
+
+        return view('checkout.index', compact('products', 'cart', 'total', 'profile', 'deliveryLocations'));
     }
+
     public function store(Request $request)
     {
         $cart = Session::get('cart', []);
@@ -38,15 +43,29 @@ class CheckoutController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:32',
-            'address' => 'required|string',
+            'region' => 'required|string|max:64',
+            'district' => 'required|string|max:128',
+            'area' => 'required|string|max:128',
+            'landmark' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'save_location' => 'nullable|boolean',
             'payment_method' => 'required|in:mtn,airtel',
         ]);
+
+        if (! DeliveryLocations::isValid($data['region'], $data['district'], $data['area'])) {
+            return back()->withErrors(['area' => 'Please select a valid delivery location.'])->withInput();
+        }
 
         DB::beginTransaction();
         try {
             $productIds = array_keys($cart);
-            $products = Product::whereIn('id', $productIds)->get();
-            $total = $products->sum(fn($p) => $p->price * $cart[$p->id]['quantity']);
+            $products = Product::with(['stock', 'sizeStock'])->whereIn('id', $productIds)->lockForUpdate()->get();
+
+            if ($products->count() !== count($productIds)) {
+                throw new \Exception('One or more products in your cart are no longer available.');
+            }
+
+            $total = $products->sum(fn ($p) => $p->price * (int) ($cart[$p->id]['quantity'] ?? 0));
 
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -55,10 +74,15 @@ class CheckoutController extends Controller
                 'payment_phone' => $data['phone'],
                 'status' => 'pending',
                 'payment_status' => 'pending',
-                'transaction_id' => 'TXN-' . strtoupper(Str::random(12)),
+                'transaction_id' => 'TXN-'.strtoupper(Str::random(12)),
                 'payment_initiated_at' => now(),
                 'shipping_name' => $data['name'],
-                'shipping_address' => $data['address'],
+                'shipping_address' => $data['address'] ?? null,
+                'shipping_city' => $data['area'],
+                'shipping_region' => $data['region'],
+                'shipping_district' => $data['district'],
+                'shipping_area' => $data['area'],
+                'shipping_landmark' => $data['landmark'],
                 'shipping_phone' => $data['phone'],
             ]);
 
@@ -66,35 +90,44 @@ class CheckoutController extends Controller
                 $qty = $cart[$product->id]['quantity'];
                 $size = $cart[$product->id]['size'] ?? null;
 
+                $stock = $product->stock()->lockForUpdate()->first();
+                if (! $stock) {
+                    throw new \Exception("No stock record for {$product->name}.");
+                }
+
                 if ($size) {
-                    $sizeStock = $product->sizeStock()->where('size', $size)->first();
-                    if (!$sizeStock || $sizeStock->quantity < $qty) {
+                    $sizeStock = DB::table('product_size_stock')
+                        ->where('product_id', $product->id)
+                        ->where('size', (string) $size)
+                        ->lockForUpdate()
+                        ->first();
+                    if (! $sizeStock || $sizeStock->quantity < $qty) {
                         throw new \Exception("Insufficient stock for {$product->name} (Size {$size}).");
                     }
-                } else {
-                    if (!$product->stock) {
-                        throw new \Exception("No stock record for {$product->name}.");
-                    }
-                    $available = $product->stock->quantity ?? 0;
-                    if ($available < $qty) {
-                        throw new \Exception("Insufficient stock for {$product->name}.");
-                    }
+                }
+
+                if ($stock->quantity < $qty) {
+                    throw new \Exception("Insufficient stock for {$product->name}.");
                 }
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
+                    'size' => $size,
                     'quantity' => $qty,
                     'price_at_sale' => $product->price,
                 ]);
 
-                $previous = $product->stock->quantity;
+                $previous = $stock->quantity;
 
                 if ($size) {
-                    $sizeStock->decrement('quantity', $qty);
+                    DB::table('product_size_stock')
+                        ->where('product_id', $product->id)
+                        ->where('size', (string) $size)
+                        ->decrement('quantity', $qty);
                 }
 
-                $product->stock()->decrement('quantity', $qty);
+                $stock->decrement('quantity', $qty);
 
                 InventoryHistory::create([
                     'product_id' => $product->id,
@@ -102,8 +135,20 @@ class CheckoutController extends Controller
                     'new_quantity' => $previous - $qty,
                     'change_amount' => -$qty,
                     'change_type' => 'sale',
-                    'notes' => 'Order #' . $order->id,
+                    'notes' => 'Order #'.$order->id,
                     'changed_by' => Auth::id(),
+                ]);
+            }
+
+            if ($request->boolean('save_location')) {
+                $profile = Auth::user()->profile ?? Auth::user()->profile()->create(['user_id' => Auth::id()]);
+                $profile->update([
+                    'full_name' => $data['name'],
+                    'phone' => $data['phone'],
+                    'delivery_region' => $data['region'],
+                    'delivery_district' => $data['district'],
+                    'delivery_area' => $data['area'],
+                    'delivery_landmark' => $data['landmark'],
                 ]);
             }
 
@@ -113,6 +158,7 @@ class CheckoutController extends Controller
             return redirect()->route('orders.confirmation', $order);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }

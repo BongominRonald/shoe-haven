@@ -13,7 +13,7 @@ class NewsletterController extends Controller
         $query = NewsletterSubscriber::latest();
 
         if ($request->filled('search')) {
-            $query->where('email', 'like', '%' . $request->string('search')->toString() . '%');
+            $query->where('email', 'like', '%'.$request->string('search')->toString().'%');
         }
 
         if ($request->has('active')) {

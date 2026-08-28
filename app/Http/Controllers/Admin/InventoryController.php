@@ -10,29 +10,24 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $products = Product::with('category', 'stock')->latest()->get();
-
-        $lowStockThreshold = 5;
-        $outOfStock = $products->filter(fn($p) => ($p->stock?->quantity ?? 0) === 0);
-        $lowStock = $products->filter(function ($p) use ($lowStockThreshold) {
-            $qty = $p->stock?->quantity ?? 0;
-            return $qty > 0 && $qty <= $lowStockThreshold;
-        });
-
-        $filter = $request->query('filter');
-        if (in_array($filter, ['low-stock', 'out-of-stock'], true)) {
-            $products = $filter === 'low-stock' ? $lowStock->values() : $outOfStock->values();
-        }
-
         $history = InventoryHistory::with('product')
             ->latest()
             ->take(100)
             ->get();
 
+        $lowStockThreshold = 5;
+        $outOfStock = $products->filter(fn ($p) => ($p->stock?->quantity ?? 0) === 0);
+        $lowStock = $products->filter(function ($p) use ($lowStockThreshold) {
+            $qty = $p->stock?->quantity ?? 0;
+
+            return $qty > 0 && $qty <= $lowStockThreshold;
+        });
+
         return view('admin.inventory.index', compact(
-            'products', 'history', 'outOfStock', 'lowStock', 'lowStockThreshold', 'filter'
+            'products', 'history', 'outOfStock', 'lowStock', 'lowStockThreshold'
         ));
     }
 

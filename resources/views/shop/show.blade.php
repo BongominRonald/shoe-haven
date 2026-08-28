@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', $product->name . ' — ' . config('app.name', 'Shoe Haven'))
+@section('meta-description', $product->brand . ' ' . $product->name . ' — UGX ' . number_format($product->price) . '. Free delivery across Uganda.')
+@section('meta-image', Str::startsWith($product->image, 'http') ? $product->image : asset($product->image))
 
 @push('styles')
 <script type="application/ld+json">
@@ -66,7 +68,7 @@
                              alt="{{ $product->name }} {{ $loop->iteration }}"
                              class="gallery-thumb rounded-3 border cursor-pointer flex-shrink-0"
                              style="width: 72px; height: 72px; object-fit: cover; {{ $loop->first ? 'border-color: var(--sh-orange) !important;' : '' }}"
-                             onclick="swapImage('{{ $img->image_url }}', this)"
+                             onclick="swapImage({{ json_encode($img->image_url) }}, this)"
                              onmouseover="this.style.borderColor='var(--sh-orange)'"
                              onmouseout="this.style.borderColor='{{ $loop->first ? 'var(--sh-orange)' : '#ddd' }}'"
                              loading="lazy">
