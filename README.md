@@ -19,10 +19,10 @@ Shoe Haven is a Laravel 12 e-commerce application for managing and selling footw
 ### Admin panel
 The admin area is organised into five groups:
 
-1. **Overview** — dashboard and store health
-2. **Catalog** — products, categories, inventory, homepage/hero
-3. **Sales & Customers** — orders and customer accounts
-4. **Communication** — customer messages and newsletter subscribers
+1. **Overview** - dashboard and store health
+2. **Catalog** - products, categories, inventory, homepage/hero
+3. **Sales & Customers** - orders and customer accounts
+4. **Communication** - customer messages and newsletter subscribers
 
 The sidebar is responsive and collapsible, with breadcrumbs and consistent page navigation. Its desktop state is remembered in the browser.
 
