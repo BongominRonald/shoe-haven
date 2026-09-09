@@ -2,7 +2,7 @@
 
 <nav class="sh-breadcrumbs" aria-label="Breadcrumb">
     <ol>
-        <li><a href="{{ route('admin.dashboard') }}"><i class="bi bi-house-door"></i><span class="visually-hidden">Dashboard</span></a></li>
+        <li><a href="{{ route('admin.dashboard') }}"><i class="bi bi-house-door"></i><span class="visually-hidden">Abonga</span></a></li>
         @foreach ($items as $item)
             <li class="sh-breadcrumbs-sep" aria-hidden="true">/</li>
             @if (isset($item['url']))

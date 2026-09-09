@@ -35,7 +35,7 @@
                             <li><a class="dropdown-item text-white" href="{{ route('orders.index') }}"><i class="bi bi-bag me-2"></i>My Orders</a></li>
                             <li><a class="dropdown-item text-white" href="{{ route('wishlist.index') }}"><i class="bi bi-heart me-2"></i>Wishlist</a></li>
                             @if (auth()->user()->isAdmin())
-                                <li><a class="dropdown-item text-white" href="{{ route('admin.dashboard') }}"><i class="bi bi-shield-shaded me-2"></i>Admin Panel</a></li>
+                                <li><a class="dropdown-item text-white" href="{{ route('admin.dashboard') }}"><i class="bi bi-shield-shaded me-2"></i>Abonga</a></li>
                             @endif
                             <li><hr class="dropdown-divider border-secondary"></li>
                             <li>

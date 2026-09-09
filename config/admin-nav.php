@@ -5,7 +5,7 @@ return [
         'label' => 'Overview',
         'items' => [
             [
-                'label' => 'Dashboard',
+                'label' => 'Abonga',
                 'icon' => 'bi-grid-1x2-fill',
                 'route' => 'admin.dashboard',
                 'pattern' => 'admin.dashboard',

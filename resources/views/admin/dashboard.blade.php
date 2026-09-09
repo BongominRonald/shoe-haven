@@ -1,7 +1,7 @@
 @extends('admin.layouts.admin')
 
-@section('title', 'Dashboard — ' . config('app.name', 'Shoe Haven'))
-@section('page-title', 'Dashboard')
+@section('title', 'Abonga — ' . config('app.name', 'Shoe Haven'))
+@section('page-title', 'Abonga')
 
 @section('content')
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">

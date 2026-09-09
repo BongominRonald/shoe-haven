@@ -103,7 +103,7 @@
 <div class="admin-shell">
     <div class="sh-sidebar" id="adminSidebar">
         <div class="sh-sidebar-inner">
-            <a href="{{ route('admin.dashboard') }}" class="sh-brand text-decoration-none" aria-label="ShoeHaven Administration dashboard">
+            <a href="{{ route('admin.dashboard') }}" class="sh-brand text-decoration-none" aria-label="ShoeHaven Administration Abonga">
                 <div class="sh-brand-mark">SH</div>
                 <div>
                     <div class="sh-brand-title">Shoe<span style="color:var(--sh-orange)">Haven</span></div>
@@ -172,7 +172,7 @@
                 <div class="admin-page-heading min-w-0">
                     <div class="sh-breadcrumbs">
                         <ol>
-                            <li><a href="{{ route('admin.dashboard') }}">Admin</a></li>
+                            <li><a href="{{ route('admin.dashboard') }}">Abonga</a></li>
                             @foreach ($breadcrumbs as $crumb)
                                 <li class="sh-breadcrumbs-sep" aria-hidden="true">/</li>
                                 <li>
@@ -185,7 +185,7 @@
                             @endforeach
                         </ol>
                     </div>
-                    <h1 class="text-truncate">@yield('page-title', 'Dashboard')</h1>
+                    <h1 class="text-truncate">@yield('page-title', 'Abonga')</h1>
                 </div>
             </div>
             <div class="dropdown">
